@@ -57,14 +57,25 @@ import { Page } from 'puppeteer';
 import { decrypt } from './helpers/decrypt';
 import { ControlsLayer } from './layers/controls.layer';
 import { Message } from './model';
+import treekill = require('tree-kill');
 
 declare module WAPI {
   const arrayBufferToBase64: (buffer: ArrayBuffer) => string;
+  const downloadFile: (data: string) => Promise<string | boolean>;
 }
 
 export class Whatsapp extends ControlsLayer {
   constructor(public page: Page) {
     super(page);
+  }
+
+  /**
+   * Decrypts message file
+   * @param data Message object
+   * @returns Decrypted file buffer (null otherwise)
+   */
+  public async downloadFile(data: string) {
+    return await this.page.evaluate((data) => WAPI.downloadFile(data), data);
   }
 
   /**
@@ -98,15 +109,25 @@ export class Whatsapp extends ControlsLayer {
 
   /**
    * Closes page and browser
+   * @internal
    */
   public async close() {
-    if (this.page) {
-      await this.page.close();
-    }
-
-    if (this.page.browser) {
-      await this.page.browser().close();
-    }
+    const closing = async (waPage: {
+      browser: () => any;
+      isClosed: () => any;
+      close: () => any;
+    }) => {
+      if (waPage) {
+        const browser = await waPage.browser();
+        const pid = browser.process() ? browser?.process().pid : null;
+        if (!waPage.isClosed()) await waPage.close();
+        if (browser) await browser.close();
+        if (pid) treekill(pid, 'SIGKILL');
+      }
+    };
+    try {
+      await closing(this.page);
+    } catch (error) {}
   }
 
   /**
@@ -114,8 +135,8 @@ export class Whatsapp extends ControlsLayer {
    * @param message Message object
    * @returns Decrypted file buffer (null otherwise)
    */
-  public async downloadFile(message: Message) {
-    if (message.isMedia) {
+  public async decryptFile(message: Message) {
+    if (message.isMedia || message.isMMS) {
       const url = message.clientUrl;
       const encBase64 = await this.page.evaluate((url: string) => {
         return fetch(url)

@@ -59,12 +59,14 @@ import {
   areAllMessagesLoaded,
   asyncLoadAllEarlierMessages,
   blockContact,
+  unblockContact,
+  getBlockList,
   clearChat,
   createGroup,
   deleteConversation,
   deleteMessages,
   demoteParticipant,
-  downloadFileWithCredentials,
+  downloadFile,
   encryptAndUploadFile,
   forwardMessages,
   getAllChatIds,
@@ -132,11 +134,17 @@ import {
   setMyStatus,
   startTyping,
   stopTyping,
-  unblockContact,
   openChat,
   openChatAt,
   getGroupInfoFromInviteLink,
   joinGroup,
+  markUnseenMessage,
+  getTheme,
+  setTheme,
+  restartService,
+  killServiceWorker,
+  sendLinkPreview,
+ // setPresence,
 } from './functions';
 import {
   base64ToFile,
@@ -163,6 +171,7 @@ import {
   _serializeRawObj,
 } from './serializers';
 import { getStore } from './store/get-store';
+import { get } from 'http';
 
 if (!window.Store || !window.Store.Msg) {
   (function () {
@@ -182,6 +191,9 @@ if (!window.Store || !window.Store.Msg) {
 window.WAPI = {
   lastRead: {},
 };
+// Layout Functions
+window.WAPI.setTheme = setTheme;
+window.WAPI.getTheme = getTheme;
 
 // Serializers assignations
 window.WAPI._serializeRawObj = _serializeRawObj;
@@ -230,13 +242,21 @@ window.WAPI.reply = reply;
 window.WAPI._sendSticker = sendSticker;
 window.WAPI.encryptAndUploadFile = encryptAndUploadFile;
 window.WAPI.sendImageAsSticker = sendImageAsSticker;
+window.WAPI.sendImageAsStickerGif = sendImageAsSticker;
 window.WAPI.startTyping = startTyping;
 window.WAPI.stopTyping = stopTyping;
 window.WAPI.sendLocation = sendLocation;
-window.WAPI.blockContact = blockContact;
-window.WAPI.unblockContact = unblockContact;
 window.WAPI.openChat = openChat;
 window.WAPI.openChatAt = openChatAt;
+window.WAPI.markUnseenMessage = markUnseenMessage;
+window.WAPI.sendLinkPreview = sendLinkPreview;
+//window.WAPI.setPresence = setPresence;
+
+//////block functions
+window.WAPI.blockContact = blockContact;
+window.WAPI.unblockContact = unblockContact;
+window.WAPI.getBlockList = getBlockList;
+
 
 // Retrieving functions
 window.WAPI.getAllContacts = getAllContacts;
@@ -270,7 +290,7 @@ window.WAPI.loadAndGetAllMessagesInChat = loadAndGetAllMessagesInChat;
 window.WAPI.getUnreadMessages = getUnreadMessages;
 window.WAPI.getCommonGroups = getCommonGroups;
 window.WAPI.getProfilePicFromServer = getProfilePicFromServer;
-window.WAPI.downloadFileWithCredentials = downloadFileWithCredentials;
+window.WAPI.downloadFile = downloadFile;
 window.WAPI.getNumberProfile = getNumberProfile;
 window.WAPI.getMessageById = getMessageById;
 window.WAPI.getNewMessageId = getNewMessageId;
@@ -286,6 +306,8 @@ window.WAPI.isConnected = isConnected;
 window.WAPI.getBatteryLevel = getBatteryLevel;
 window.WAPI.base64ImageToFile = base64ToFile;
 window.WAPI.base64ToFile = base64ToFile;
+window.WAPI.restartService = restartService;
+window.WAPI.killServiceWorker = killServiceWorker;
 
 // Listeners initialization
 window.WAPI._newMessagesQueue = [];
@@ -334,35 +356,70 @@ window.WAPI.sendMessageMentioned = async function (chatId, message, mentioned) {
   });
 };
 
-window.WAPI.getProfilePicSmallFromId = function (id, done) {
-  window.Store.ProfilePicThumb.find(id).then(
-    function (d) {
+window.WAPI.getProfilePicSmallFromId = async function (id) {
+  return await window.Store.ProfilePicThumb.find(id).then(
+    async function (d) {
       if (d.img !== undefined) {
-        window.WAPI.downloadFileWithCredentials(d.img, done);
+        return await window.WAPI.downloadFileWithCredentials(d.img);
       } else {
-        done(false);
+        return false;
       }
     },
     function (e) {
-      done(false);
+        return false;
     }
   );
 };
 
-window.WAPI.getProfilePicFromId = function (id, done) {
-  window.Store.ProfilePicThumb.find(id).then(
-    function (d) {
+window.WAPI.getProfilePicFromId = async function (id) {
+  return await window.Store.ProfilePicThumb.find(id).then(
+    async function (d) {
       if (d.imgFull !== undefined) {
-        window.WAPI.downloadFileWithCredentials(d.imgFull, done);
+        return await window.WAPI.downloadFileWithCredentials(d.imgFull);
       } else {
-        done(false);
+        return false;
       }
     },
     function (e) {
-      done(false);
+      return false;
     }
   );
 };
+
+window.WAPI.downloadFileWithCredentials = async function (url) {
+  if(!axios || !url) return false;
+  const ab = (await axios.get(url,{responseType: 'arraybuffer'})).data
+  return btoa(new Uint8Array(ab).reduce((data, byte) => data + String.fromCharCode(byte), ''));
+};
+
+window.WAPI._serializeNumberStatusObj = (obj) => {
+  if (obj == undefined) {
+      return null;
+  }
+
+  return Object.assign({}, {
+      id: obj.jid,
+      status: obj.status,
+      isBusiness: (obj.biz === true),
+      canReceiveMessage: (obj.status === 200)
+  });
+};
+
+window.WAPI.checkNumberStatus = async function (id) {
+  try {
+      const result = await window.Store.WapQuery.queryExist(id);
+      if (result.jid === undefined) throw 404;
+      const data = window.WAPI._serializeNumberStatusObj(result);
+      if (data.status == 200) data.numberExists = true
+      return data;
+  } catch (e) {
+          return window.WAPI._serializeNumberStatusObj({
+              status: e,
+              jid: id
+          });
+  }
+};
+
 
 window.WAPI.getWAVersion = function () {
   return window.Debug.VERSION;

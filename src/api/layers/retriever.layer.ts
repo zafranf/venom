@@ -65,6 +65,8 @@ import {
 import { SenderLayer } from './sender.layer';
 
 declare module WAPI {
+  const getTheme:() => string;
+  const getBlockList: () => Contact[];
   const getAllChatsWithNewMsg: () => Chat[];
   const getAllNewMessages: () => any;
   const getAllChats: () => Chat[];
@@ -74,6 +76,7 @@ declare module WAPI {
   const getChatById: (contactId: string) => Chat;
   const getChat: (contactId: string) => Chat;
   const getProfilePicFromServer: (chatId: string) => string;
+  const checkNumberStatus: (contactId: string) => any;
   const loadEarlierMessages: (contactId: string) => Message[];
   const getStatus: (contactId: string) => ContactStatus;
   const getNumberProfile: (contactId: string) => WhatsappProfile;
@@ -101,6 +104,22 @@ export class RetrieverLayer extends SenderLayer {
   }
 
   /**
+   * Receive the current theme
+   * @returns string light or dark
+   */
+   public async getTheme(){
+    return await this.page.evaluate(() => WAPI.getTheme());
+  }
+  
+  /**
+   * Receive all blocked contacts
+   * @returns array of [0,1,2,3....]
+   */
+  public async getBlockList(){
+    return await this.page.evaluate(() => WAPI.getBlockList());
+  }
+
+  /**
    * Retrieves all chats
    * @returns array of [Chat]
    */
@@ -111,6 +130,20 @@ export class RetrieverLayer extends SenderLayer {
       return this.page.evaluate(() => WAPI.getAllChats());
     }
   }
+
+
+  /**
+   * Checks if a number is a valid WA number
+   * @param contactId, you need to include the @c.us at the end.
+   * @returns contact detial as promise
+   */
+  public async checkNumberStatus(contactId: string) {
+    return await this.page.evaluate(
+      contactId => WAPI.checkNumberStatus(contactId),
+      contactId
+    );
+  }
+
 
   /**
    * Retrieves all chats with messages

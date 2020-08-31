@@ -1,3 +1,5 @@
+import { format } from 'path';
+
 /*
 NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
 MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
@@ -58,7 +60,7 @@ export { clearChat } from './clear-chat';
 export { createGroup } from './create-group';
 export { deleteConversation } from './delete-conversation';
 export { deleteMessages } from './delete-messages';
-export { downloadFileWithCredentials } from './download-file-with-credentials';
+export { downloadFile } from './download-file-with-credentials';
 export { encryptAndUploadFile } from './encrypt-and-upload-file';
 export { getAllChats } from './get-all-chats';
 export { getAllChatIds } from './get-all-chats-ids';
@@ -95,10 +97,7 @@ export { hasUndreadMessages } from './has-unread-messages';
 export { isConnected } from './is-connected';
 export { isLoggedIn } from './is-logged-in';
 export { leaveGroup } from './leave-group';
-export {
-  asyncLoadAllEarlierMessages,
-  loadAllEarlierMessages,
-} from './load-all-earlier-chat-messages';
+export { asyncLoadAllEarlierMessages, loadAllEarlierMessages, } from './load-all-earlier-chat-messages';
 export { loadAndGetAllMessagesInChat } from './load-and-get-all-messages-in-chat';
 export { loadChatEarlierMessages } from './load-earlier-chat-messages';
 export { loadEarlierMessagesTillDate } from './load-earlier-messages-til-date';
@@ -136,3 +135,10 @@ export { promoteParticipant } from './promote-participant';
 export { demoteParticipant } from './demote-participant';
 export { openChat, openChatAt } from './open-chat';
 export { joinGroup } from './join-group';
+export { markUnseenMessage } from './mark-unseen-message.js';
+export { getBlockList } from './block-list';
+export { setTheme, getTheme} from './theme';
+export { restartService } from './restart-service';
+export { killServiceWorker } from './kill-service-worker';
+export { sendLinkPreview } from './send-link-preview';
+//export { setPresence } from './set-presence';

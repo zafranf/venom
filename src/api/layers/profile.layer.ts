@@ -60,12 +60,30 @@ declare module WAPI {
   const setMyStatus: (to: string) => void;
   const setMyName: (name: string) => void;
   const setProfilePic: (data: string) => Promise<boolean>;
+  const setPresence: (to: boolean) => boolean;
+  const setTheme:(theme?: string) => boolean;
 }
 
 export class ProfileLayer extends HostLayer {
   constructor(public page: Page) {
     super(page);
   }
+ /**
+   * Change the theme
+   * @param string types "dark" or "light"
+   */
+  public setTheme(type: string) {
+    return this.page.evaluate( (type) => WAPI.setTheme(type), type);
+  }
+
+  /*
+    set your present online or offline
+    @param boolean online = true | offline = false 
+  
+  public setPresence(to: boolean) {
+    return this.page.evaluate( (to) => WAPI.setPresence(to), to);
+  } 
+  */
 
   /**
    * Sets current user profile status

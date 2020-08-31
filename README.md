@@ -4,22 +4,20 @@
 
 > Venom is a high-performance system developed with JavaScript to create a bot for WhatsApp, support for creating any interaction, such as customer service, media sending, sentence recognition based on artificial intelligence and all types of design architecture for WhatsApp.
 
-![enter image description here](https://s2.click/flyervenom.png)
-
 ## 🕷🕷 Functions Venom🕷🕷
 
 |                                                |     |
 | ---------------------------------------------- | --- |
-| Automatic QR Refresh                           | ✔   |
-| Send **text, image, video, audio and docs**    | ✔   |
-| Get **contacts, chats, groups, group members** | ✔   |
-| Send contacts                                  | ✔   |
-| Send stickers                                  | ✔   |
-| Multiple Sessions                              | ✔   |
-| Forward Messages                               | ✔   |
-| Receive message                                | ✔   |
-| 📍 Send location!!                             | ✔   |
-| 🕸🕸 **and much more**                           | ✔   |
+| Automatic QR Refresh                                       | ✔   |
+| Send **text, image, video, audio and docs**                | ✔   |
+| Get **contacts, chats, groups, group members,Block List**  | ✔   |
+| Send contacts                                              | ✔   |
+| Send stickers                                              | ✔   |
+| Multiple Sessions                                          | ✔   |
+| Forward Messages                                           | ✔   |
+| Receive message                                            | ✔   |
+| 📍 Send location!! (beta)                                   | ✔   |
+| 🕸🕸 **and much more**                                     | ✔   |
 
 ## Installation
 
@@ -129,13 +127,13 @@ fast as possible (outruns native methods). Supports big files!
 import fs = require('fs');
 import mime = require('mime-types');
 
-client.onMessage(async (message) => {
-  if (message.isMedia) {
-    const buffer = await client.downloadFile(message);
+client.onMessage( async (message) => {
+  if (message.isMedia == true) {
+    const buffer = await client.decryptFile(message); 
     // At this point you can do whatever you want with the buffer
     // Most likely you want to write it into a file
     const fileName = `some-file-name.${mime.extension(message.mimetype)}`;
-    fs.writeFile(fileName, buffer, function (err) {
+    await fs.writeFile(fileName, buffer, (err) => {
       ...
     });
   }
@@ -150,9 +148,13 @@ available can be found in [here](/src/api/layers) and
 
 ### Chatting
 
-##### Here, `chatId` could be `<phoneNuber>@c.us` or `<phoneNumber>-<groupId>@c.us`
+##### Here, `chatId` could be `<phoneNumber>@c.us` or `<phoneNumber>-<groupId>@c.us`
 
 ```javascript
+
+//Automatically sends a link with the auto generated link preview. You can also add a custom message to be added.
+await client.sendLinkPreview("000000000000@c.us", "https://www.youtube.com/watch?v=V1bFr2SWP1I", "Link title");
+
 // Send basic text
 await client.sendText(chatId, '👋 Hello from venom!');
 
@@ -173,6 +175,14 @@ await client.sendMentioned(chatId, 'Hello @5218113130740 and @5218243160777!', [
 // Reply to a message
 await client.reply(chatId, 'This is a reply!', message.id.toString());
 
+// Reply to a message with mention
+await client.reply(
+  chatId,
+  'Hello @5218113130740 and @5218243160777! This is a reply with mention!',
+  message.id.toString(),
+  ['5218113130740', '5218243160777']
+);
+
 // Send file (venom will take care of mime types, just need the path)
 await client.sendFile(chatId, 'path/to/file.pdf', 'cv.pdf', 'Curriculum');
 
@@ -191,8 +201,13 @@ await client.sendContact(chatId, contactId);
 // Forwards messages
 await client.forwardMessages(chatId, [message.id.toString()], true);
 
-// Send sticker
-await client.sendImageAsSticker(chatId, 'path/to/image.jpg');
+//Generates sticker from the provided animated gif image and sends it (Send image as animated sticker)
+//image path imageBase64 A valid gif image is required. You can also send via http/https (http://www.website.com/img.gif)
+await client.sendImageAsStickerGif("000000000000@c.us", './image.gif');
+
+//Generates sticker from given image and sends it (Send Image As Sticker)
+// image path imageBase64 A valid png, jpg and webp image is required. You can also send via http/https (http://www.website.com/img.jpg)
+await client.sendImageAsSticker("000000000000@c.us", './image.jpg');
 
 // Send location
 await client.sendLocation(
@@ -219,6 +234,10 @@ await client.setChatState(chatId, 0 | 1 | 2);
 ## Retrieving Data
 
 ```javascript
+
+// Calls your list of blocked contacts (returns an array)
+const getBlockList = await client.getBlockList();
+
 // Retrieve contacts
 const contacts = await client.getAllContacts();
 
@@ -292,6 +311,7 @@ await client.joinGroup(InviteCode);
 ## Profile Functions
 
 ```javascript
+
 // Set client status
 await client.setProfileStatus('On vacations! ✈️');
 
@@ -305,6 +325,13 @@ await client.setProfilePic('path/to/image.jpg');
 ## Device Functions
 
 ```javascript
+
+//Delete the Service Worker
+await client.killServiceWorker();
+
+//Load the service again
+await client.restartService();
+
 // Get device info
 await client.getHostDevice();
 
@@ -361,6 +388,15 @@ client.onAddedToGroup(chatEvent => {
 ## Other
 
 ```javascript
+
+//Change the theme
+//string types "dark" or "light"
+await client.setTheme(types);
+
+//Receive the current theme
+//returns string light or dark
+await client.getTheme();
+
 // Delete chat
 await client.deleteChat(chatId);
 
@@ -370,8 +406,18 @@ await client.clearChat(chatId);
 // Delete message (last parameter: delete only locally)
 await client.deleteMessage(chatId, message.id.toString(), false);
 
+// Mark chat as not seen (returns true if it works)
+await client.markUnseenMessage('0000000@c.us');
+
+//blocks a user (returns true if it works)
+await client.blockContact('0000000@c.us');
+
+//unlocks contacts (returns true if it works)
+await client.unblockContact('0000000@c.us');
+
 // Retrieve a number profile / check if contact is a valid whatsapp number
 const profile = await client.getNumberProfile('0000000@c.us');
+
 ```
 
 ## Misc
